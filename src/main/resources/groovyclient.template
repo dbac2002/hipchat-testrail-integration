@@ -1,7 +1,0 @@
-import com.github.groovyclient.TestRailClient
-
-@BaseScript(TestRailClient)
-import groovy.transform.BaseScript
-
-connect 'https://cetrea.testrail.net'
-login 'qa@cetrea.com', 'UjkV540XM8ZldCR9jkDw-wtVJbktG4ZCknzDlyWo3'
