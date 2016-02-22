@@ -1,0 +1,7 @@
+import com.github.groovyclient.TestRailClient
+
+@BaseScript(TestRailClient)
+import groovy.transform.BaseScript
+
+connect ''
+login '', ''
