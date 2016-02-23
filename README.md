@@ -5,5 +5,5 @@ more or less private repo. web service client using https://github.com/dbac2002/
 
 So e.g. given an installed hipchat webhook, one could use the client to retrieve infos from testrail into hipchat
 
-    /testrail get name, email of user 1
+    /testrail get user(1) with 'name', 'id'
 
