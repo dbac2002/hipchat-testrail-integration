@@ -20,7 +20,7 @@
 		<dependency>
 			<groupId>com.github.groovyclient</groupId>
 			<artifactId>testrail-groovyclient</artifactId>
-			<version>0.3</version>
+			<version>0.6</version>
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.groovy</groupId>

@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -18,8 +19,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-
-import org.codehaus.groovy.control.CompilationFailedException;
 
 import com.github.groovyclient.Runner;
 import com.github.hipchat.integration.model.HipChatRequest;
@@ -35,11 +34,40 @@ public class HipChatTestRailIntegration {
 	public HipChatResponse groovy(String request) {
 		try {
 			HipChatRequestMessage message = new Gson().fromJson(request, HipChatRequest.class).item.message;
-			return createResponse(request2TestRail(createGroovyScript(convert(message.message))));
+			Object request2TestRail = request2TestRail(createGroovyScript(convert(message.message)));
+			return createResponse(parseTestRailResponse(request2TestRail));
 		}
 		catch (Exception e) {
+			e.printStackTrace();
 			return createErrorResponse(e.getMessage());
 		}
+	}
+
+	private String[] parseTestRailResponse(Object request2TestRail) {
+		if (request2TestRail instanceof List<?>) {
+			List<?> list = (List<?>) request2TestRail;
+			String resp = "Total: " + list.size() + " " + (list.size() == 1 ? "entry" : "entries") + "\n";
+			return new String[] { resp + list.stream().map(Objects::toString).collect(Collectors.joining("\n")),
+					"green" };
+		}
+		if (request2TestRail instanceof Map<?, ?>) {
+			Map<?, ?> map = (Map<?, ?>) request2TestRail;
+			String color = "green";
+			Object o = map.get("passed_percentage");
+			if (o != null) {
+				Integer per = Integer.parseInt(String.valueOf(map.get("passed_percentage")));
+				int iper = per.intValue();
+				if (iper < 30) {
+					color = "red";
+				}
+				else if (iper < 60) {
+					color = "yellow";
+				}
+			}
+
+			return new String[] { request2TestRail.toString(), color };
+		}
+		return new String[] { request2TestRail.toString(), "green" };
 	}
 
 	private HipChatResponse createErrorResponse(String message) {
@@ -49,16 +77,15 @@ public class HipChatTestRailIntegration {
 		return response;
 	}
 
-	private HipChatResponse createResponse(List<Object> evaluate) {
+	private HipChatResponse createResponse(String[] res) {
 		HipChatResponse response = new HipChatResponse();
-		response.color = "green";
-		response.message = evaluate.stream().map(Objects::toString).collect(Collectors.joining(", "));
+		response.color = res[1];
+		response.message = res[0];
 		return response;
 	}
 
-	@SuppressWarnings("unchecked")
-	private List<Object> request2TestRail(File tempFile) throws CompilationFailedException, IOException {
-		return (List<Object>) new Runner().evaluate(tempFile);
+	private Object request2TestRail(File tempFile) throws IOException {
+		return new Runner().evaluate(tempFile);
 	}
 
 	private File createGroovyScript(String message) throws IOException {
@@ -75,7 +102,16 @@ public class HipChatTestRailIntegration {
 			throw new IllegalArgumentException("Could not load template file or is empty");
 		}
 		List<String> lines = new ArrayList<>(templateLines);
-		lines.add(message);
+
+		if (message.contains("with")) {
+			lines.add(message);
+		}
+		else {
+			lines.add("def result = " + message);
+			lines.add("result.json()");
+		}
+		System.out.println(lines);
+
 		Files.write(tempFile.toPath(), lines);
 		return tempFile;
 	}

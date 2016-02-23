@@ -1,6 +1,6 @@
-import com.github.groovyclient.TestRailClient
+import com.github.groovyclient.EnhancedTestRailClient
 
-@BaseScript(TestRailClient)
+@BaseScript(EnhancedTestRailClient)
 import groovy.transform.BaseScript
 
 connect ''
